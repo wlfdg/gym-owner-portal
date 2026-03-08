@@ -8,6 +8,7 @@ const NAV = [
   { to:"/members",   icon:"🏋", label:"Members" },
   { to:"/dtr",       icon:"🗓", label:"Admin DTR" },
   { to:"/logs",      icon:"📋", label:"Activity Logs" },
+  { to:"/settings",  icon:"⚙️",  label:"Settings" },
 ];
 
 function Layout({ children }) {

@@ -7,6 +7,7 @@ const Admins    = lazy(() => import("./pages/Admins"));
 const DTR       = lazy(() => import("./pages/DTR"));
 const Logs      = lazy(() => import("./pages/Logs"));
 const Members   = lazy(() => import("./pages/Members"));
+const Settings  = lazy(() => import("./pages/Settings"));
 
 function Loader() {
   return (
@@ -18,8 +19,7 @@ function Loader() {
 }
 
 function PrivateRoute({ children }) {
-  const auth = localStorage.getItem("owner_logged_in");
-  return auth === "true" ? children : <Navigate to="/" replace />;
+  return localStorage.getItem("owner_logged_in") === "true" ? children : <Navigate to="/" replace />;
 }
 
 function App() {
@@ -27,12 +27,13 @@ function App() {
     <BrowserRouter>
       <Suspense fallback={<Loader />}>
         <Routes>
-          <Route path="/"        element={<Login />} />
+          <Route path="/"          element={<Login />} />
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="/admins"    element={<PrivateRoute><Admins /></PrivateRoute>} />
           <Route path="/dtr"       element={<PrivateRoute><DTR /></PrivateRoute>} />
           <Route path="/logs"      element={<PrivateRoute><Logs /></PrivateRoute>} />
           <Route path="/members"   element={<PrivateRoute><Members /></PrivateRoute>} />
+          <Route path="/settings"  element={<PrivateRoute><Settings /></PrivateRoute>} />
           <Route path="*"          element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Suspense>
