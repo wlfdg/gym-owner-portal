@@ -6,7 +6,7 @@ const NAV = [
   { to:"/dashboard", icon:"⚡", label:"Overview" },
   { to:"/admins",    icon:"👥", label:"Manage Admins" },
   { to:"/members",   icon:"🏋", label:"Members" },
-  { to:"/dtr",       icon:"🗓", label:"Admin DTR" },
+  { to:"/shifts",    icon:"🗓", label:"Shifts & Revenue" },
   { to:"/logs",      icon:"📋", label:"Activity Logs" },
   { to:"/settings",  icon:"⚙️",  label:"Settings" },
 ];

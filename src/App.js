@@ -8,6 +8,7 @@ const DTR       = lazy(() => import("./pages/DTR"));
 const Logs      = lazy(() => import("./pages/Logs"));
 const Members   = lazy(() => import("./pages/Members"));
 const Settings  = lazy(() => import("./pages/Settings"));
+const Shifts    = lazy(() => import("./pages/Shifts"));
 
 function Loader() {
   return (
@@ -34,6 +35,7 @@ function App() {
           <Route path="/logs"      element={<PrivateRoute><Logs /></PrivateRoute>} />
           <Route path="/members"   element={<PrivateRoute><Members /></PrivateRoute>} />
           <Route path="/settings"  element={<PrivateRoute><Settings /></PrivateRoute>} />
+          <Route path="/shifts"    element={<PrivateRoute><Shifts /></PrivateRoute>} />
           <Route path="*"          element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Suspense>
