@@ -9,6 +9,11 @@ const ACTION_COLORS = {
   EDIT_MEMBER:          "#ffb300",
   DELETE_MEMBER:        "#ff1744",
   DELETE_WALKIN:        "#ff5722",
+  ADD_WALKIN:           "#00e676",
+  DELETE_REQUEST:       "#ff1744",
+  APPROVE_DELETION:     "#ff1744",
+  REJECT_DELETION:      "#00e676",
+  DTR_ERROR:            "#ff9100",
   EMPLOYEE_TIMEIN:      "#00e676",
   EMPLOYEE_TIMEOUT:     "#ff9100",
   CHANGE_ADMIN_PASSWORD:"#e040fb",
@@ -27,6 +32,11 @@ const ACTION_LABELS = {
   EDIT_MEMBER:          "Edited Member",
   DELETE_MEMBER:        "Deleted Member",
   DELETE_WALKIN:        "Deleted Walk-in",
+  ADD_WALKIN:           "Added Walk-in",
+  DELETE_REQUEST:       "Requested Member Deletion",
+  APPROVE_DELETION:     "Approved Member Deletion",
+  REJECT_DELETION:      "Rejected Member Deletion",
+  DTR_ERROR:            "DTR Error",
   EMPLOYEE_TIMEIN:      "Employee Time In",
   EMPLOYEE_TIMEOUT:     "Employee Time Out",
   CHANGE_ADMIN_PASSWORD:"Changed Admin Password",
@@ -65,7 +75,7 @@ function Logs() {
 
   const uniqueActions = [...new Set(logs.map(l => l.action))].sort();
 
-  const deleteLogs = filtered.filter(l => l.action.startsWith("DELETE"));
+  const deleteLogs = filtered.filter(l => ["DELETE_WALKIN","DELETE_REQUEST","APPROVE_DELETION"].includes(l.action));
   const otherLogs  = filtered.filter(l => !l.action.startsWith("DELETE"));
 
   return (
