@@ -89,10 +89,15 @@ function ShiftRow({ s, i }) {
   );
 }
 
+// ── Local date helper (avoids UTC offset giving wrong date in PHT) ───────────
+function localDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 function Shifts() {
   const now = new Date();
-  const todayStr = now.toISOString().split("T")[0];
+  const todayStr = localDateStr(now);
 
   const [tab, setTab]           = useState("monthly"); // "monthly" | "daily"
   const [month, setMonth]       = useState(String(now.getMonth() + 1).padStart(2, "0"));
@@ -103,30 +108,37 @@ function Shifts() {
   const [dailyShifts, setDailyShifts] = useState([]);
   const [selected, setSelected] = useState(null);
   const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState("");
   const mounted = useRef(true);
   useEffect(() => { return () => { mounted.current = false; }; }, []);
 
   // ── Fetch monthly ──
   const fetchMonthly = useCallback(async () => {
     setLoading(true);
+    setError("");
     try {
       const res = await api.get("/shifts", { params: { month, year } });
       if (!mounted.current) return;
       setShifts(res.data.shifts || []);
       setSummary(res.data.summary || []);
-    } catch {}
-    setLoading(false);
+    } catch (e) {
+      if (mounted.current) setError("Could not load shift data. The server may be starting up.");
+    }
+    if (mounted.current) setLoading(false);
   }, [month, year]);
 
   // ── Fetch daily ──
   const fetchDaily = useCallback(async () => {
     setLoading(true);
+    setError("");
     try {
       const res = await api.get("/shifts/daily", { params: { date } });
       if (!mounted.current) return;
-      setDailyShifts(res.data.shifts || res.data || []);
-    } catch {}
-    setLoading(false);
+      setDailyShifts(res.data.shifts || []);
+    } catch (e) {
+      if (mounted.current) setError("Could not load shift data. The server may be starting up.");
+    }
+    if (mounted.current) setLoading(false);
   }, [date]);
 
   useEffect(() => {
@@ -167,6 +179,21 @@ function Shifts() {
           🗓 Daily View
         </button>
       </div>
+
+      {/* Error banner */}
+      {error && (
+        <div style={{
+          padding:"12px 16px", borderRadius:8, marginBottom:20,
+          fontSize:14, fontWeight:600,
+          background:"rgba(255,23,68,0.1)", border:"1px solid rgba(255,23,68,0.3)",
+          color:"var(--danger)", display:"flex", alignItems:"center", justifyContent:"space-between"
+        }}>
+          <span>⚠ {error}</span>
+          <button className="btn btn-ghost btn-sm" onClick={() => tab === "daily" ? fetchDaily() : fetchMonthly()}>
+            ↺ Retry
+          </button>
+        </div>
+      )}
 
       {/* ══ MONTHLY VIEW ══════════════════════════════════════════════════════ */}
       {tab === "monthly" && (<>
@@ -264,7 +291,7 @@ function Shifts() {
           {/* Quick day buttons */}
           {[0,1,2].map(offset => {
             const d = new Date(now); d.setDate(d.getDate() - offset);
-            const ds = d.toISOString().split("T")[0];
+            const ds = localDateStr(d);
             const label = offset === 0 ? "Today" : offset === 1 ? "Yesterday" : ds;
             return (
               <button key={offset}
