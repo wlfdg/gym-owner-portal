@@ -4,7 +4,7 @@ const API = process.env.REACT_APP_API_URL || "https://gym-deploy-sul4.onrender.c
 
 const api = axios.create({
   baseURL: API,
-  timeout: 15000,
+  timeout: 60000, // 60s to handle Render cold starts (free tier can take 30-50s)
   headers: { "Content-Type": "application/json" },
 });
 
