@@ -9,20 +9,16 @@ function ConfirmModal({ config, onConfirm, onCancel }) {
   return (
     <div style={{
       position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)",
-      zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center",
-      padding: 20
+      zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20
     }}>
       <div style={{
         background: "#1a1a1a", border: `1px solid ${isDanger ? "rgba(255,23,68,0.35)" : "rgba(255,179,0,0.35)"}`,
         borderRadius: 14, padding: "32px 28px", width: "100%", maxWidth: 420,
         boxShadow: "0 16px 48px rgba(0,0,0,0.6)"
       }}>
-        {/* Icon */}
         <div style={{ fontSize: 40, textAlign: "center", marginBottom: 16 }}>
           {isDanger ? "🗑" : "⚠️"}
         </div>
-
-        {/* Title */}
         <h3 style={{
           fontFamily: "'Bebas Neue', cursive", fontSize: 28, letterSpacing: 2,
           color: isDanger ? "var(--danger)" : "var(--warning)",
@@ -30,45 +26,28 @@ function ConfirmModal({ config, onConfirm, onCancel }) {
         }}>
           Confirm Action
         </h3>
-
-        {/* Message */}
-        <p style={{
-          fontSize: 14, color: "var(--text)", textAlign: "center",
-          lineHeight: 1.6, marginBottom: 8
-        }}>
+        <p style={{ fontSize: 14, color: "var(--text)", textAlign: "center", lineHeight: 1.6, marginBottom: 8 }}>
           {config.message}
         </p>
-
-        {/* Username highlight */}
         <div style={{
           background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)",
-          borderRadius: 8, padding: "10px 16px", textAlign: "center",
-          marginBottom: 24
+          borderRadius: 8, padding: "10px 16px", textAlign: "center", marginBottom: 24
         }}>
           <span style={{ fontSize: 12, color: "var(--muted)" }}>Admin account: </span>
           <span style={{ fontWeight: 700, color: "var(--accent)", fontSize: 15 }}>{config.username}</span>
         </div>
-
-        {/* Warning note */}
         <div style={{
           background: isDanger ? "rgba(255,23,68,0.07)" : "rgba(255,179,0,0.07)",
           border: `1px solid ${isDanger ? "rgba(255,23,68,0.2)" : "rgba(255,179,0,0.2)"}`,
           borderRadius: 8, padding: "10px 14px", marginBottom: 24,
-          fontSize: 12, color: isDanger ? "var(--danger)" : "var(--warning)",
-          textAlign: "center"
+          fontSize: 12, color: isDanger ? "var(--danger)" : "var(--warning)", textAlign: "center"
         }}>
           {isDanger
             ? "⚠ This action cannot be undone. The account will be permanently removed."
             : "⚠ This will revoke the admin's access to the system immediately."}
         </div>
-
-        {/* Buttons */}
         <div style={{ display: "flex", gap: 10 }}>
-          <button
-            className="btn btn-ghost"
-            style={{ flex: 1, justifyContent: "center", padding: 12 }}
-            onClick={onCancel}
-          >
+          <button className="btn btn-ghost" style={{ flex: 1, justifyContent: "center", padding: 12 }} onClick={onCancel}>
             Cancel
           </button>
           <button
@@ -87,11 +66,24 @@ function ConfirmModal({ config, onConfirm, onCancel }) {
 // ── Change Password Modal ──────────────────────────────────────────────────────
 function ChangePasswordModal({ username, onClose, onSuccess }) {
   const [newPw, setNewPw]         = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState("");
 
+  const bothFilled     = newPw.length > 0 && confirmPw.length > 0;
+  const passwordsMatch = newPw === confirmPw;
+
   const changePassword = async () => {
-    if (!newPw || newPw.length < 6) { setError("Password must be at least 6 characters."); return; }
+    setError("");
+    if (!newPw || newPw.length < 6) {
+      setError("New password must be at least 6 characters."); return;
+    }
+    if (!confirmPw) {
+      setError("Please confirm your new password."); return;
+    }
+    if (newPw !== confirmPw) {
+      setError("Passwords do not match. Please re-enter your new password."); return;
+    }
     setLoading(true);
     try {
       const res = await api.post(`/admins/${username}/change-password`, { new_password: newPw });
@@ -108,26 +100,66 @@ function ChangePasswordModal({ username, onClose, onSuccess }) {
       position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)",
       zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20
     }}>
-      <div className="card" style={{ width: 400, maxWidth: "90vw" }}>
+      <div className="card" style={{ width: 420, maxWidth: "90vw" }}>
         <h3 style={{ fontSize: 22, marginBottom: 6 }}>🔒 Change Password</h3>
         <p style={{ color: "var(--muted)", fontSize: 13, marginBottom: 20 }}>
           Setting new password for <strong style={{ color: "var(--accent)" }}>{username}</strong>
         </p>
-        {error && <div className="error-msg" style={{ marginBottom: 16 }}>{error}</div>}
-        <div className="form-group" style={{ marginBottom: 20 }}>
+
+        {error && (
+          <div className="error-msg" style={{ marginBottom: 16 }}>❌ {error}</div>
+        )}
+
+        {/* New Password */}
+        <div className="form-group" style={{ marginBottom: 14 }}>
           <label>New Password</label>
           <input
-            type="password" placeholder="At least 6 characters"
-            value={newPw} onChange={e => setNewPw(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && changePassword()}
+            type="password"
+            placeholder="At least 6 characters"
+            value={newPw}
+            onChange={e => { setNewPw(e.target.value); setError(""); }}
             autoFocus
           />
         </div>
+
+        {/* Confirm Password */}
+        <div className="form-group" style={{ marginBottom: 6 }}>
+          <label>Confirm New Password</label>
+          <input
+            type="password"
+            placeholder="Re-enter new password"
+            value={confirmPw}
+            onChange={e => { setConfirmPw(e.target.value); setError(""); }}
+            onKeyDown={e => e.key === "Enter" && changePassword()}
+            style={{
+              borderColor: bothFilled
+                ? passwordsMatch ? "rgba(0,230,118,0.5)" : "rgba(255,23,68,0.5)"
+                : undefined
+            }}
+          />
+        </div>
+
+        {/* Live match indicator */}
+        <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 20, minHeight: 18 }}>
+          {bothFilled && (
+            <span style={{ color: passwordsMatch ? "var(--success)" : "var(--danger)" }}>
+              {passwordsMatch ? "✅ Passwords match" : "❌ Passwords do not match"}
+            </span>
+          )}
+        </div>
+
         <div style={{ display: "flex", gap: 10 }}>
-          <button className="btn btn-primary" onClick={changePassword} disabled={loading} style={{ flex: 1 }}>
-            {loading ? "Saving..." : "Update Password"}
+          <button
+            className="btn btn-primary"
+            onClick={changePassword}
+            disabled={loading || (bothFilled && !passwordsMatch)}
+            style={{ flex: 1 }}
+          >
+            {loading ? "Saving..." : "🔒 Update Password"}
           </button>
-          <button className="btn btn-ghost" onClick={onClose} style={{ flex: 1 }}>Cancel</button>
+          <button className="btn btn-ghost" onClick={onClose} style={{ flex: 1 }}>
+            Cancel
+          </button>
         </div>
       </div>
     </div>
@@ -136,11 +168,11 @@ function ChangePasswordModal({ username, onClose, onSuccess }) {
 
 // ── Main Admins Component ──────────────────────────────────────────────────────
 function Admins() {
-  const [admins, setAdmins]         = useState([]);
-  const [loading, setLoading]       = useState(true);
-  const [msg, setMsg]               = useState(null);
-  const [pwModal, setPwModal]       = useState(null);   // username string
-  const [confirmModal, setConfirmModal] = useState(null); // { username, type, message, action }
+  const [admins, setAdmins]             = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [msg, setMsg]                   = useState(null);
+  const [pwModal, setPwModal]           = useState(null);
+  const [confirmModal, setConfirmModal] = useState(null);
   const mounted = useRef(true);
   useEffect(() => { return () => { mounted.current = false; }; }, []);
 
@@ -160,7 +192,6 @@ function Admins() {
 
   useEffect(() => { fetchAdmins(); }, [fetchAdmins]);
 
-  // Generic action (approve, reject, enable)
   const action = async (url, successMsg, method = "post") => {
     try {
       if (method === "delete") await api.delete(url);
@@ -170,11 +201,10 @@ function Admins() {
     } catch (e) { showMsg(e.response?.data?.message || "Action failed.", "error"); }
   };
 
-  // Open confirmation modal
   const askConfirm = (username, type, actionUrl, successMsg) => {
     const message = type === "danger"
-      ? `Are you sure you want to permanently delete this admin account? This action may affect their system access.`
-      : `Are you sure you want to disable this admin account? This will revoke their access immediately.`;
+      ? "Are you sure you want to permanently delete this admin account? This action may affect their system access."
+      : "Are you sure you want to disable this admin account? This will revoke their access immediately.";
     setConfirmModal({
       username, type, message,
       onConfirm: async () => {
@@ -210,36 +240,23 @@ function Admins() {
               Reject
             </button>
           </>}
-
           {a.status === "active" && !showApprove && (
             <button className="btn btn-warning btn-sm"
-              onClick={() => askConfirm(
-                a.username, "warning",
-                `/admins/${a.username}/disable`,
-                `${a.username} has been disabled.`
-              )}>
+              onClick={() => askConfirm(a.username, "warning", `/admins/${a.username}/disable`, `${a.username} has been disabled.`)}>
               Disable
             </button>
           )}
-
           {a.status === "disabled" && (
             <button className="btn btn-success btn-sm"
               onClick={() => action(`/admins/${a.username}/enable`, `${a.username} enabled!`)}>
               Enable
             </button>
           )}
-
-          <button className="btn btn-primary btn-sm"
-            onClick={() => setPwModal(a.username)}>
+          <button className="btn btn-primary btn-sm" onClick={() => setPwModal(a.username)}>
             Change Password
           </button>
-
           <button className="btn btn-danger btn-sm"
-            onClick={() => askConfirm(
-              a.username, "danger",
-              `/admins/${a.username}`,
-              `${a.username} has been deleted.`
-            )}>
+            onClick={() => askConfirm(a.username, "danger", `/admins/${a.username}`, `${a.username} has been deleted.`)}>
             Delete
           </button>
         </div>
@@ -254,14 +271,12 @@ function Admins() {
         <p>Approve, disable, or manage admin accounts</p>
       </div>
 
-      {/* Confirmation Modal */}
       <ConfirmModal
         config={confirmModal}
         onConfirm={() => confirmModal?.onConfirm()}
         onCancel={() => setConfirmModal(null)}
       />
 
-      {/* Change Password Modal */}
       {pwModal && (
         <ChangePasswordModal
           username={pwModal}
@@ -270,7 +285,6 @@ function Admins() {
         />
       )}
 
-      {/* Status message */}
       {msg && (
         <div style={{
           padding: "12px 16px", borderRadius: 8, marginBottom: 20,
