@@ -2,6 +2,8 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { api } from "../api/config";
 import Layout from "../components/Layout";
 
+const PAGE_SIZE = 10;
+
 // ── Confirmation Modal ─────────────────────────────────────────────────────────
 function ConfirmModal({ config, onConfirm, onCancel }) {
   if (!config) return null;
@@ -100,13 +102,11 @@ function ChangePasswordModal({ username, onClose, onSuccess }) {
           Setting new password for <strong style={{ color: "var(--accent)" }}>{username}</strong>
         </p>
         {error && <div className="error-msg" style={{ marginBottom: 16 }}>❌ {error}</div>}
-
         <div className="form-group" style={{ marginBottom: 14 }}>
           <label>New Password</label>
           <input type="password" placeholder="At least 6 characters" value={newPw}
             onChange={e => { setNewPw(e.target.value); setError(""); }} autoFocus />
         </div>
-
         <div className="form-group" style={{ marginBottom: 6 }}>
           <label>Confirm New Password</label>
           <input type="password" placeholder="Re-enter new password" value={confirmPw}
@@ -115,7 +115,6 @@ function ChangePasswordModal({ username, onClose, onSuccess }) {
             style={{ borderColor: bothFilled ? (passwordsMatch ? "rgba(0,230,118,0.5)" : "rgba(255,23,68,0.5)") : undefined }}
           />
         </div>
-
         <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 20, minHeight: 18 }}>
           {bothFilled && (
             <span style={{ color: passwordsMatch ? "var(--success)" : "var(--danger)" }}>
@@ -123,7 +122,6 @@ function ChangePasswordModal({ username, onClose, onSuccess }) {
             </span>
           )}
         </div>
-
         <div style={{ display: "flex", gap: 10 }}>
           <button className="btn btn-primary" onClick={changePassword}
             disabled={loading || (bothFilled && !passwordsMatch)} style={{ flex: 1 }}>
@@ -136,6 +134,28 @@ function ChangePasswordModal({ username, onClose, onSuccess }) {
   );
 }
 
+// ── Pagination Controls ────────────────────────────────────────────────────────
+function Pagination({ page, totalPages, onChange }) {
+  if (totalPages <= 1) return null;
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 16 }}>
+      <button className="btn btn-ghost btn-sm" onClick={() => onChange(1)} disabled={page === 1}>««</button>
+      <button className="btn btn-ghost btn-sm" onClick={() => onChange(page - 1)} disabled={page === 1}>‹ Prev</button>
+      {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+        <button key={p}
+          className={`btn btn-sm ${p === page ? "btn-primary" : "btn-ghost"}`}
+          onClick={() => onChange(p)}
+          style={{ minWidth: 34 }}
+        >
+          {p}
+        </button>
+      ))}
+      <button className="btn btn-ghost btn-sm" onClick={() => onChange(page + 1)} disabled={page === totalPages}>Next ›</button>
+      <button className="btn btn-ghost btn-sm" onClick={() => onChange(totalPages)} disabled={page === totalPages}>»»</button>
+    </div>
+  );
+}
+
 // ── Main Admins Component ──────────────────────────────────────────────────────
 function Admins() {
   const [admins, setAdmins]             = useState([]);
@@ -143,6 +163,8 @@ function Admins() {
   const [msg, setMsg]                   = useState(null);
   const [pwModal, setPwModal]           = useState(null);
   const [confirmModal, setConfirmModal] = useState(null);
+  const [search, setSearch]             = useState("");
+  const [page, setPage]                 = useState(1);
   const mounted = useRef(true);
   useEffect(() => { return () => { mounted.current = false; }; }, []);
 
@@ -161,6 +183,9 @@ function Admins() {
   }, []);
 
   useEffect(() => { fetchAdmins(); }, [fetchAdmins]);
+
+  // Reset to page 1 when search changes
+  useEffect(() => { setPage(1); }, [search]);
 
   const action = async (url, successMsg, method = "post") => {
     try {
@@ -185,43 +210,17 @@ function Admins() {
     });
   };
 
-  // Pending = awaiting approval, non-owner admins = all active + disabled in one list
   const pending   = admins.filter(a => a.status === "pending");
   const allAdmins = admins.filter(a => a.status !== "pending" && a.role !== "owner");
 
-  const AdminRow = ({ a, i }) => (
-    <tr style={{ opacity: a.status === "disabled" ? 0.7 : 1 }}>
-      <td style={{ color: "var(--muted)", fontSize: 12 }}>{i + 1}</td>
-      <td style={{ fontWeight: 600 }}>{a.username}</td>
-      <td>
-        {a.status === "active"   && <span className="badge badge-active">Active</span>}
-        {a.status === "disabled" && <span className="badge badge-expired">Disabled</span>}
-      </td>
-      <td>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {/* Disable / Enable toggle in same row */}
-          {a.status === "active" ? (
-            <button className="btn btn-warning btn-sm"
-              onClick={() => askConfirm(a.username, "warning", `/admins/${a.username}/disable`, `${a.username} has been disabled.`)}>
-              Disable
-            </button>
-          ) : (
-            <button className="btn btn-success btn-sm"
-              onClick={() => action(`/admins/${a.username}/enable`, `${a.username} has been enabled!`)}>
-              Enable
-            </button>
-          )}
-          <button className="btn btn-primary btn-sm" onClick={() => setPwModal(a.username)}>
-            Change Password
-          </button>
-          <button className="btn btn-danger btn-sm"
-            onClick={() => askConfirm(a.username, "danger", `/admins/${a.username}`, `${a.username} has been deleted.`)}>
-            Delete
-          </button>
-        </div>
-      </td>
-    </tr>
+  // Search filter (case-insensitive)
+  const filtered = allAdmins.filter(a =>
+    a.username.toLowerCase().includes(search.toLowerCase())
   );
+
+  // Pagination
+  const totalPages  = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated   = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <Layout>
@@ -294,30 +293,100 @@ function Admins() {
         }
       </div>
 
-      {/* ── Admins (active + disabled combined) ── */}
+      {/* ── Admins panel ── */}
       <div className="card">
+        {/* Header — no count here anymore */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
           <h3 style={{ fontSize: 20 }}>Admins</h3>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <span className="badge badge-active">
-              {allAdmins.filter(a => a.status === "active").length} active
-            </span>
-            <span className="badge badge-expired">
-              {allAdmins.filter(a => a.status === "disabled").length} disabled
-            </span>
+          <div style={{ display: "flex", gap: 8 }}>
+            <span className="badge badge-active">{allAdmins.filter(a => a.status === "active").length} active</span>
+            <span className="badge badge-expired">{allAdmins.filter(a => a.status === "disabled").length} disabled</span>
           </div>
         </div>
+
+        {/* Search field */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ position: "relative" }}>
+            <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 14 }}>🔍</span>
+            <input
+              placeholder="Search admin"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{ paddingLeft: 36 }}
+            />
+          </div>
+        </div>
+
         {loading ? <div className="empty-state">Loading...</div>
-          : allAdmins.length === 0
-            ? <div className="empty-state">No admin accounts found</div>
-            : <div className="table-wrap">
-                <table>
-                  <thead><tr><th>#</th><th>Username</th><th>Status</th><th>Actions</th></tr></thead>
-                  <tbody>
-                    {allAdmins.map((a, i) => <AdminRow key={a.username} a={a} i={i} />)}
-                  </tbody>
-                </table>
+          : filtered.length === 0
+            ? <div className="empty-state">
+                {search ? `No admins found matching "${search}"` : "No admin accounts found"}
               </div>
+            : <>
+                <div className="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Username</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginated.map((a, i) => (
+                        <tr key={a.username} style={{ opacity: a.status === "disabled" ? 0.7 : 1 }}>
+                          <td style={{ color: "var(--muted)", fontSize: 12 }}>
+                            {(page - 1) * PAGE_SIZE + i + 1}
+                          </td>
+                          <td style={{ fontWeight: 600 }}>{a.username}</td>
+                          <td>
+                            {a.status === "active"
+                              ? <span className="badge badge-active">Active</span>
+                              : <span className="badge badge-expired">Disabled</span>}
+                          </td>
+                          <td>
+                            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                              {a.status === "active" ? (
+                                <button className="btn btn-warning btn-sm"
+                                  onClick={() => askConfirm(a.username, "warning", `/admins/${a.username}/disable`, `${a.username} has been disabled.`)}>
+                                  Disable
+                                </button>
+                              ) : (
+                                <button className="btn btn-success btn-sm"
+                                  onClick={() => action(`/admins/${a.username}/enable`, `${a.username} has been enabled!`)}>
+                                  Enable
+                                </button>
+                              )}
+                              <button className="btn btn-primary btn-sm" onClick={() => setPwModal(a.username)}>
+                                Change Password
+                              </button>
+                              <button className="btn btn-danger btn-sm"
+                                onClick={() => askConfirm(a.username, "danger", `/admins/${a.username}`, `${a.username} has been deleted.`)}>
+                                Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination */}
+                <Pagination page={page} totalPages={totalPages} onChange={setPage} />
+
+                {/* Total Records — bottom left */}
+                <div style={{
+                  marginTop: 14, fontSize: 12, color: "var(--muted)",
+                  borderTop: "1px solid var(--border)", paddingTop: 12
+                }}>
+                  Total Records Fetched: <strong style={{ color: "var(--text)" }}>{filtered.length}</strong>
+                  {search && <span style={{ marginLeft: 8 }}>
+                    (filtered from <strong style={{ color: "var(--text)" }}>{allAdmins.length}</strong> total)
+                  </span>}
+                </div>
+              </>
         }
       </div>
     </Layout>
