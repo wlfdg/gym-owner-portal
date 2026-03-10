@@ -75,15 +75,9 @@ function ChangePasswordModal({ username, onClose, onSuccess }) {
 
   const changePassword = async () => {
     setError("");
-    if (!newPw || newPw.length < 6) {
-      setError("New password must be at least 6 characters."); return;
-    }
-    if (!confirmPw) {
-      setError("Please confirm your new password."); return;
-    }
-    if (newPw !== confirmPw) {
-      setError("Passwords do not match. Please re-enter your new password."); return;
-    }
+    if (!newPw || newPw.length < 6) { setError("New password must be at least 6 characters."); return; }
+    if (!confirmPw)                  { setError("Please confirm your new password."); return; }
+    if (newPw !== confirmPw)         { setError("Passwords do not match. Please re-enter your new password."); return; }
     setLoading(true);
     try {
       const res = await api.post(`/admins/${username}/change-password`, { new_password: newPw });
@@ -105,41 +99,23 @@ function ChangePasswordModal({ username, onClose, onSuccess }) {
         <p style={{ color: "var(--muted)", fontSize: 13, marginBottom: 20 }}>
           Setting new password for <strong style={{ color: "var(--accent)" }}>{username}</strong>
         </p>
+        {error && <div className="error-msg" style={{ marginBottom: 16 }}>❌ {error}</div>}
 
-        {error && (
-          <div className="error-msg" style={{ marginBottom: 16 }}>❌ {error}</div>
-        )}
-
-        {/* New Password */}
         <div className="form-group" style={{ marginBottom: 14 }}>
           <label>New Password</label>
-          <input
-            type="password"
-            placeholder="At least 6 characters"
-            value={newPw}
-            onChange={e => { setNewPw(e.target.value); setError(""); }}
-            autoFocus
-          />
+          <input type="password" placeholder="At least 6 characters" value={newPw}
+            onChange={e => { setNewPw(e.target.value); setError(""); }} autoFocus />
         </div>
 
-        {/* Confirm Password */}
         <div className="form-group" style={{ marginBottom: 6 }}>
           <label>Confirm New Password</label>
-          <input
-            type="password"
-            placeholder="Re-enter new password"
-            value={confirmPw}
+          <input type="password" placeholder="Re-enter new password" value={confirmPw}
             onChange={e => { setConfirmPw(e.target.value); setError(""); }}
             onKeyDown={e => e.key === "Enter" && changePassword()}
-            style={{
-              borderColor: bothFilled
-                ? passwordsMatch ? "rgba(0,230,118,0.5)" : "rgba(255,23,68,0.5)"
-                : undefined
-            }}
+            style={{ borderColor: bothFilled ? (passwordsMatch ? "rgba(0,230,118,0.5)" : "rgba(255,23,68,0.5)") : undefined }}
           />
         </div>
 
-        {/* Live match indicator */}
         <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 20, minHeight: 18 }}>
           {bothFilled && (
             <span style={{ color: passwordsMatch ? "var(--success)" : "var(--danger)" }}>
@@ -149,17 +125,11 @@ function ChangePasswordModal({ username, onClose, onSuccess }) {
         </div>
 
         <div style={{ display: "flex", gap: 10 }}>
-          <button
-            className="btn btn-primary"
-            onClick={changePassword}
-            disabled={loading || (bothFilled && !passwordsMatch)}
-            style={{ flex: 1 }}
-          >
+          <button className="btn btn-primary" onClick={changePassword}
+            disabled={loading || (bothFilled && !passwordsMatch)} style={{ flex: 1 }}>
             {loading ? "Saving..." : "🔒 Update Password"}
           </button>
-          <button className="btn btn-ghost" onClick={onClose} style={{ flex: 1 }}>
-            Cancel
-          </button>
+          <button className="btn btn-ghost" onClick={onClose} style={{ flex: 1 }}>Cancel</button>
         </div>
       </div>
     </div>
@@ -215,40 +185,29 @@ function Admins() {
     });
   };
 
-  const pending  = admins.filter(a => a.status === "pending");
-  const active   = admins.filter(a => a.status === "active" && a.role === "admin");
-  const disabled = admins.filter(a => a.status === "disabled");
+  // Pending = awaiting approval, non-owner admins = all active + disabled in one list
+  const pending   = admins.filter(a => a.status === "pending");
+  const allAdmins = admins.filter(a => a.status !== "pending" && a.role !== "owner");
 
-  const AdminRow = ({ a, i, showApprove }) => (
-    <tr>
+  const AdminRow = ({ a, i }) => (
+    <tr style={{ opacity: a.status === "disabled" ? 0.7 : 1 }}>
       <td style={{ color: "var(--muted)", fontSize: 12 }}>{i + 1}</td>
       <td style={{ fontWeight: 600 }}>{a.username}</td>
       <td>
-        {a.status === "pending"  && <span className="badge badge-expiring">Pending</span>}
         {a.status === "active"   && <span className="badge badge-active">Active</span>}
         {a.status === "disabled" && <span className="badge badge-expired">Disabled</span>}
       </td>
       <td>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {showApprove && <>
-            <button className="btn btn-success btn-sm"
-              onClick={() => action(`/admins/${a.username}/approve`, `${a.username} approved!`)}>
-              Approve
-            </button>
-            <button className="btn btn-danger btn-sm"
-              onClick={() => action(`/admins/${a.username}/reject`, `${a.username} rejected.`)}>
-              Reject
-            </button>
-          </>}
-          {a.status === "active" && !showApprove && (
+          {/* Disable / Enable toggle in same row */}
+          {a.status === "active" ? (
             <button className="btn btn-warning btn-sm"
               onClick={() => askConfirm(a.username, "warning", `/admins/${a.username}/disable`, `${a.username} has been disabled.`)}>
               Disable
             </button>
-          )}
-          {a.status === "disabled" && (
+          ) : (
             <button className="btn btn-success btn-sm"
-              onClick={() => action(`/admins/${a.username}/enable`, `${a.username} enabled!`)}>
+              onClick={() => action(`/admins/${a.username}/enable`, `${a.username} has been enabled!`)}>
               Enable
             </button>
           )}
@@ -297,48 +256,68 @@ function Admins() {
         </div>
       )}
 
-      {/* Pending */}
+      {/* ── Pending Approval ── */}
       <div className="card" style={{ marginBottom: 20, borderColor: pending.length > 0 ? "rgba(255,193,7,0.3)" : undefined }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
           <h3 style={{ fontSize: 20 }}>Pending Approval</h3>
           <span className="badge badge-expiring">{pending.length}</span>
         </div>
         {loading ? <div className="empty-state">Loading...</div>
-          : pending.length === 0 ? <div className="empty-state">No pending requests</div>
-          : <div className="table-wrap"><table>
-              <thead><tr><th>#</th><th>Username</th><th>Status</th><th>Actions</th></tr></thead>
-              <tbody>{pending.map((a, i) => <AdminRow key={a.username} a={a} i={i} showApprove={true} />)}</tbody>
-            </table></div>
+          : pending.length === 0
+            ? <div className="empty-state">No pending requests</div>
+            : <div className="table-wrap">
+                <table>
+                  <thead><tr><th>#</th><th>Username</th><th>Status</th><th>Actions</th></tr></thead>
+                  <tbody>
+                    {pending.map((a, i) => (
+                      <tr key={a.username}>
+                        <td style={{ color: "var(--muted)", fontSize: 12 }}>{i + 1}</td>
+                        <td style={{ fontWeight: 600 }}>{a.username}</td>
+                        <td><span className="badge badge-expiring">Pending</span></td>
+                        <td>
+                          <div style={{ display: "flex", gap: 6 }}>
+                            <button className="btn btn-success btn-sm"
+                              onClick={() => action(`/admins/${a.username}/approve`, `${a.username} approved!`)}>
+                              Approve
+                            </button>
+                            <button className="btn btn-danger btn-sm"
+                              onClick={() => action(`/admins/${a.username}/reject`, `${a.username} rejected.`)}>
+                              Reject
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
         }
       </div>
 
-      {/* Active */}
-      <div className="card" style={{ marginBottom: 20 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <h3 style={{ fontSize: 20 }}>Active Admins</h3>
-          <span className="badge badge-active">{active.length}</span>
-        </div>
-        {loading ? <div className="empty-state">Loading...</div>
-          : active.length === 0 ? <div className="empty-state">No active admins</div>
-          : <div className="table-wrap"><table>
-              <thead><tr><th>#</th><th>Username</th><th>Status</th><th>Actions</th></tr></thead>
-              <tbody>{active.map((a, i) => <AdminRow key={a.username} a={a} i={i} showApprove={false} />)}</tbody>
-            </table></div>
-        }
-      </div>
-
-      {/* Disabled */}
+      {/* ── Admins (active + disabled combined) ── */}
       <div className="card">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <h3 style={{ fontSize: 20 }}>Disabled Admins</h3>
-          <span className="badge badge-expired">{disabled.length}</span>
+          <h3 style={{ fontSize: 20 }}>Admins</h3>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <span className="badge badge-active">
+              {allAdmins.filter(a => a.status === "active").length} active
+            </span>
+            <span className="badge badge-expired">
+              {allAdmins.filter(a => a.status === "disabled").length} disabled
+            </span>
+          </div>
         </div>
         {loading ? <div className="empty-state">Loading...</div>
-          : disabled.length === 0 ? <div className="empty-state">No disabled admins</div>
-          : <div className="table-wrap"><table>
-              <thead><tr><th>#</th><th>Username</th><th>Status</th><th>Actions</th></tr></thead>
-              <tbody>{disabled.map((a, i) => <AdminRow key={a.username} a={a} i={i} showApprove={false} />)}</tbody>
-            </table></div>
+          : allAdmins.length === 0
+            ? <div className="empty-state">No admin accounts found</div>
+            : <div className="table-wrap">
+                <table>
+                  <thead><tr><th>#</th><th>Username</th><th>Status</th><th>Actions</th></tr></thead>
+                  <tbody>
+                    {allAdmins.map((a, i) => <AdminRow key={a.username} a={a} i={i} />)}
+                  </tbody>
+                </table>
+              </div>
         }
       </div>
     </Layout>
