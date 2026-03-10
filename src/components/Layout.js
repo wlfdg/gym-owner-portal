@@ -7,23 +7,24 @@ const NAV = [
   { to:"/admins",    icon:"👥", label:"Manage Admins" },
   { to:"/members",   icon:"🏋", label:"Members" },
   { to:"/shifts",    icon:"🗓", label:"Shifts & Revenue" },
-  { to:"/deletions",  icon:"🗑", label:"Deletion Requests" },
+  { to:"/dtr",       icon:"🕐", label:"Employee DTR" },
+  { to:"/deletions", icon:"🗑", label:"Deletion Requests" },
   { to:"/logs",      icon:"📋", label:"Activity Logs" },
   { to:"/settings",  icon:"⚙️",  label:"Settings" },
 ];
 
 function Layout({ children }) {
-  const navigate  = useNavigate();
-  const [unread, setUnread]         = useState(0);
-  const [popups, setPopups]         = useState([]);
-  const [notifications, setNotifs]  = useState([]);
+  const navigate = useNavigate();
+  const [unread, setUnread]               = useState(0);
+  const [popups, setPopups]               = useState([]);
+  const [notifications, setNotifs]        = useState([]);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
+  const [loggingOut, setLoggingOut]       = useState(false);
 
   const fetchUnread = useCallback(async () => {
     try {
       const res = await api.get("/notifications/unread-count");
       const newCount = res.data.count;
-      // If count increased, fetch new notifications and show popup
       if (newCount > unread && unread >= 0) {
         const nRes = await api.get("/notifications");
         const newNotifs = nRes.data.filter(n => !n.is_read);
@@ -58,8 +59,26 @@ function Layout({ children }) {
     }
   };
 
-  const logout = () => {
+  // ── Logout: sends shift_id so backend saves revenue & resets for next admin ──
+  const logout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      const username = localStorage.getItem("gym_admin") || "";
+      const shiftId  = localStorage.getItem("shift_id");
+      // POST to /logout — backend saves shift revenue, closes the shift
+      await api.post("/logout", {
+        username,
+        ...(shiftId ? { shift_id: parseInt(shiftId) } : {})
+      });
+    } catch {
+      // Even if the request fails, still clear local state and redirect
+    }
+    // ✅ Clear all auth keys
     localStorage.removeItem("owner_logged_in");
+    localStorage.removeItem("gym_admin");
+    localStorage.removeItem("gym_role");
+    localStorage.removeItem("shift_id");
     navigate("/", { replace: true });
   };
 
@@ -88,15 +107,16 @@ function Layout({ children }) {
             <h3 style={{ fontFamily:"'Bebas Neue',cursive", fontSize:24, color:"var(--accent)" }}>Notifications</h3>
             <button className="btn btn-ghost btn-sm" onClick={() => setShowNotifPanel(false)}>✕</button>
           </div>
-          {notifications.length === 0 ? (
-            <div className="empty-state">No notifications yet.</div>
-          ) : notifications.map(n => (
-            <div key={n.id} style={{ padding:"14px 20px", borderBottom:"1px solid var(--border)", background: n.is_read ? "transparent" : "rgba(232,255,0,0.03)" }}>
-              <div style={{ fontWeight:600, fontSize:13, color: n.is_read ? "var(--text)" : "var(--accent)", marginBottom:4 }}>{n.title}</div>
-              <div style={{ fontSize:12, color:"var(--muted)", marginBottom:4 }}>{n.message}</div>
-              <div style={{ fontSize:10, color:"var(--muted)" }}>{new Date(n.created_at).toLocaleString("en-PH")}</div>
-            </div>
-          ))}
+          {notifications.length === 0
+            ? <div className="empty-state">No notifications yet.</div>
+            : notifications.map(n => (
+              <div key={n.id} style={{ padding:"14px 20px", borderBottom:"1px solid var(--border)", background: n.is_read ? "transparent" : "rgba(232,255,0,0.03)" }}>
+                <div style={{ fontWeight:600, fontSize:13, color: n.is_read ? "var(--text)" : "var(--accent)", marginBottom:4 }}>{n.title}</div>
+                <div style={{ fontSize:12, color:"var(--muted)", marginBottom:4 }}>{n.message}</div>
+                <div style={{ fontSize:10, color:"var(--muted)" }}>{new Date(n.created_at).toLocaleString("en-PH")}</div>
+              </div>
+            ))
+          }
         </div>
       )}
 
@@ -118,12 +138,19 @@ function Layout({ children }) {
           ))}
         </nav>
         <div className="sidebar-footer">
-          <button className="btn btn-ghost btn-sm" style={{ width:"100%", marginBottom:8, justifyContent:"space-between" }} onClick={openNotifs}>
+          <button
+            className="btn btn-ghost btn-sm"
+            style={{ width:"100%", marginBottom:8, justifyContent:"space-between" }}
+            onClick={openNotifs}>
             🔔 Notifications
             {unread > 0 && <span className="badge-count">{unread}</span>}
           </button>
-          <div style={{ fontSize:11, color:"var(--muted)", marginBottom:8, textTransform:"uppercase", letterSpacing:1 }}>owner</div>
-          <button className="logout-btn" onClick={logout}>↩ Logout</button>
+          <div style={{ fontSize:11, color:"var(--muted)", marginBottom:8, textTransform:"uppercase", letterSpacing:1 }}>
+            {localStorage.getItem("gym_admin") || "owner"}
+          </div>
+          <button className="logout-btn" onClick={logout} disabled={loggingOut}>
+            {loggingOut ? "Logging out..." : "↩ Logout"}
+          </button>
         </div>
       </aside>
 

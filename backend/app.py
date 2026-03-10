@@ -866,9 +866,6 @@ def report_excel():
     response.headers["Content-Disposition"] = f"attachment; filename={filename}"
     response.headers["Content-Type"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     return response
-    except Exception as ex:
-        import traceback
-        return error(f"Error generating report: {str(ex)}", 500)
 
 
 
@@ -913,6 +910,24 @@ def get_shifts():
                 pass
     cur.close(); conn.close()
     return jsonify({"shifts": rows, "summary": list(summary.values())})
+
+
+
+@app.route("/shifts/daily", methods=["GET"])
+def get_shifts_daily():
+    """Return all admin shifts for a specific date, with per-admin summary."""
+    date = request.args.get("date", datetime.now(PHT).strftime("%Y-%m-%d"))
+    conn = get_db(); cur = conn.cursor()
+    cur.execute("""
+        SELECT id, admin_username, date, time_in, time_out,
+               COALESCE(shift_revenue, 0) as shift_revenue
+        FROM admin_dtr
+        WHERE date = %s
+        ORDER BY time_in ASC
+    """, (date,))
+    rows = rows_to_list(cur.fetchall(), cur)
+    cur.close(); conn.close()
+    return jsonify({"shifts": rows, "date": date})
 
 
 # ── Admin DTR ─────────────────────────────────────────────────────────────────
