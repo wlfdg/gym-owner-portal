@@ -146,9 +146,17 @@ function Shifts() {
     else fetchDaily();
   }, [tab, fetchMonthly, fetchDaily]);
 
-  const detailShifts = selected ? shifts.filter(s => s.admin_username === selected) : [];
+  // Sort helper — latest time_in first
+  const sortByLatest = (arr) => [...arr].sort((a, b) => {
+    const ta = new Date((a.shift_ts_in || a.time_in || "").replace(" ", "T"));
+    const tb = new Date((b.shift_ts_in || b.time_in || "").replace(" ", "T"));
+    return tb - ta;
+  });
+
+  const detailShifts = selected ? sortByLatest(shifts.filter(s => s.admin_username === selected)) : [];
   const totalRevenue = summary.reduce((a, s) => a + parseFloat(s.total_revenue || 0), 0);
   const totalShiftsAll = summary.reduce((a, s) => a + s.total_shifts, 0);
+  const sortedDailyShifts = [...dailyShifts].sort((a, b) => new Date((b.shift_ts_in || b.time_in || "").replace(" ","T")) - new Date((a.shift_ts_in || a.time_in || "").replace(" ","T")));
   const dailyRevenue = dailyShifts.reduce((a, s) => a + parseFloat(s.shift_revenue || 0), 0);
 
   return (
@@ -238,7 +246,7 @@ function Shifts() {
                   <table>
                     <thead><tr><th>#</th><th>Admin</th><th>Shifts</th><th>Total Hours</th><th>Walk-in Revenue</th><th></th></tr></thead>
                     <tbody>
-                      {summary.map((s, i) => (
+                      {[...summary].sort((a,b) => parseFloat(b.total_revenue||0) - parseFloat(a.total_revenue||0)).map((s, i) => (
                         <tr key={s.admin} style={{ background: selected === s.admin ? "rgba(232,255,0,0.05)" : "" }}>
                           <td style={{ color:"var(--muted)", fontSize:12 }}>{i+1}</td>
                           <td style={{ fontWeight:700, color:"var(--accent)" }}>{s.admin}</td>
@@ -338,7 +346,7 @@ function Shifts() {
                       <tr><th>#</th><th>Admin</th><th>Time In</th><th>Time Out</th><th>Duration</th><th>Walk-in Revenue</th><th>Status</th></tr>
                     </thead>
                     <tbody>
-                      {dailyShifts.map((s, i) => (
+                      {sortedDailyShifts.map((s, i) => (
                         <tr key={s.id}>
                           <td style={{ color:"var(--muted)", fontSize:12 }}>{i+1}</td>
                           <td style={{ fontWeight:700, color:"var(--accent)" }}>{s.admin_username}</td>
