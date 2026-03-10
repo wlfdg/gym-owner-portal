@@ -3,6 +3,12 @@ import { Link } from "react-router-dom";
 import { api } from "../api/config";
 import Layout from "../components/Layout";
 
+// ── Local date helper — avoids UTC offset giving wrong date in PHT (+8) ──────
+function localDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
+
 function Dashboard() {
   const [stats, setStats]     = useState({});
   const [admins, setAdmins]   = useState([]);
