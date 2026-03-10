@@ -886,6 +886,7 @@ def report_excel():
     except Exception as ex:
         return error(f"Error generating report: {str(ex)}", 500)
 
+
 @app.route("/shifts", methods=["GET"])
 def get_shifts():
     month = request.args.get("month", datetime.now(PHT).strftime("%m"))
