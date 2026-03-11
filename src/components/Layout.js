@@ -7,7 +7,6 @@ const NAV = [
   { to:"/admins",    icon:"👥", label:"Manage Admins" },
   { to:"/members",   icon:"🏋", label:"Members" },
   { to:"/shifts",    icon:"🗓", label:"Shifts & Revenue" },
-  { to:"/dtr",       icon:"🕐", label:"Employee DTR" },
   { to:"/deletions", icon:"🗑", label:"Deletion Requests" },
   { to:"/logs",      icon:"📋", label:"Activity Logs" },
   { to:"/settings",  icon:"⚙️",  label:"Settings" },

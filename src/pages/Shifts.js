@@ -146,17 +146,21 @@ function Shifts() {
     else fetchDaily();
   }, [tab, fetchMonthly, fetchDaily]);
 
-  // Sort helper — latest time_in first
+  // Sort helper — active shifts first, then latest time_in
   const sortByLatest = (arr) => [...arr].sort((a, b) => {
+    const aActive = !(a.shift_ts_out || a.time_out) ? 0 : 1;
+    const bActive = !(b.shift_ts_out || b.time_out) ? 0 : 1;
+    if (aActive !== bActive) return aActive - bActive;
     const ta = new Date((a.shift_ts_in || a.time_in || "").replace(" ", "T"));
     const tb = new Date((b.shift_ts_in || b.time_in || "").replace(" ", "T"));
     return tb - ta;
   });
 
-  const detailShifts = selected ? sortByLatest(shifts.filter(s => s.admin_username === selected)) : [];
+  const isOwner = (name) => (name || "").toLowerCase() === "owner";
+  const detailShifts = selected ? sortByLatest(shifts.filter(s => s.admin_username === selected && !isOwner(s.admin_username))) : [];
   const totalRevenue = summary.reduce((a, s) => a + parseFloat(s.total_revenue || 0), 0);
   const totalShiftsAll = summary.reduce((a, s) => a + s.total_shifts, 0);
-  const sortedDailyShifts = [...dailyShifts].sort((a, b) => new Date((b.shift_ts_in || b.time_in || "").replace(" ","T")) - new Date((a.shift_ts_in || a.time_in || "").replace(" ","T")));
+  const sortedDailyShifts = sortByLatest(dailyShifts.filter(s => !isOwner(s.admin_username)));
   const dailyRevenue = dailyShifts.reduce((a, s) => a + parseFloat(s.shift_revenue || 0), 0);
 
   return (
@@ -246,7 +250,7 @@ function Shifts() {
                   <table>
                     <thead><tr><th>#</th><th>Admin</th><th>Shifts</th><th>Total Hours</th><th>Walk-in Revenue</th><th></th></tr></thead>
                     <tbody>
-                      {[...summary].sort((a,b) => parseFloat(b.total_revenue||0) - parseFloat(a.total_revenue||0)).map((s, i) => (
+                      {[...summary].filter(s => !isOwner(s.admin)).sort((a,b) => parseFloat(b.total_revenue||0) - parseFloat(a.total_revenue||0)).map((s, i) => (
                         <tr key={s.admin} style={{ background: selected === s.admin ? "rgba(232,255,0,0.05)" : "" }}>
                           <td style={{ color:"var(--muted)", fontSize:12 }}>{i+1}</td>
                           <td style={{ fontWeight:700, color:"var(--accent)" }}>{s.admin}</td>
