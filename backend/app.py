@@ -886,9 +886,9 @@ def shifts_daily():
         cur.execute("""
             SELECT id, admin_username, time_in, time_out, shift_revenue,
                    time_in AS shift_ts_in, time_out AS shift_ts_out,
-                   DATE(COALESCE(time_in, NOW())) AS date
+                   date
             FROM admin_dtr
-            WHERE DATE(COALESCE(time_in, NOW())) = %s
+            WHERE date = %s
             ORDER BY time_in DESC NULLS LAST
         """, (date,))
         shifts = rows_to_list(cur.fetchall(), cur)
