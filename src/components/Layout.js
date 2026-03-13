@@ -115,7 +115,7 @@ function Layout({ children }) {
       <aside className="sidebar">
         <div className="sidebar-logo">
           <h1>LOYD`S FITNESS</h1>
-          <div className="role-badge">Owner Portal</div>
+          <div className="role-badge">😎 Owner Portal</div>
         </div>
         <nav>
           {NAV.map(({ to, label }) => (
