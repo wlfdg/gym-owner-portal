@@ -9,6 +9,7 @@ const Members   = lazy(() => import("./pages/Members"));
 const Settings  = lazy(() => import("./pages/Settings"));
 const Shifts    = lazy(() => import("./pages/Shifts"));
 const Deletions = lazy(() => import("./pages/DeletionRequests"));
+const Walkins   = lazy(() => import("./pages/Walkins"));
 
 function Loader() {
   return (
@@ -35,7 +36,8 @@ function App() {
           <Route path="/members"   element={<PrivateRoute><Members /></PrivateRoute>} />
           <Route path="/settings"  element={<PrivateRoute><Settings /></PrivateRoute>} />
           <Route path="/shifts"    element={<PrivateRoute><Shifts /></PrivateRoute>} />
-          <Route path="/deletions"  element={<PrivateRoute><Deletions /></PrivateRoute>} />
+          <Route path="/deletions" element={<PrivateRoute><Deletions /></PrivateRoute>} />
+          <Route path="/walkins"   element={<PrivateRoute><Walkins /></PrivateRoute>} />
           <Route path="*"          element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Suspense>
