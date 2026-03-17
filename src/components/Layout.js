@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from "react-router-dom";
+﻿import { NavLink, useNavigate } from "react-router-dom";
 import { useEffect, useState, useCallback } from "react";
 import { api } from "../api/config";
 
@@ -32,7 +32,7 @@ function Layout({ children }) {
         if (newCount > unread) {
           newNotifs.slice(0, newCount - unread).forEach(n => {
             const id = Date.now() + Math.random();
-            setPopups(prev => [...prev, { id, title: n.title, message: n.message }]);
+            setPopups(prev => [...prev, { id, title: n.title, message: n.message, type: n.type }]);
             setTimeout(() => setPopups(prev => prev.filter(p => p.id !== id)), 6000);
           });
         }
