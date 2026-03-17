@@ -75,7 +75,7 @@ function Dashboard() {
         </div>
         <div className="stat-card">
           <div className="stat-label">Total Revenue</div>
-          <div className="stat-value" style={{fontSize:32}}>{loading?"--":"P"+fmt(stats.revenue)}</div>
+          <div className="stat-value" style={{fontSize:32}}>{loading?"--":"₱"+fmt(stats.revenue)}</div>
           <div className="stat-sub">All time</div>
         </div>
         <div className="stat-card" style={{ borderColor:"rgba(232,255,0,0.3)", background:"linear-gradient(135deg,#1a1a1a 0%,#1f1f0a 100%)", cursor:"pointer" }}

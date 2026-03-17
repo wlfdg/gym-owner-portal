@@ -90,7 +90,7 @@ function Walkins() {
               {isToday ? "Today's Total Walk-in Revenue" : `Walk-in Revenue â€” ${selectedDate}`}
             </div>
             <div style={{ fontFamily: "'Bebas Neue',cursive", fontSize: 64, color: "var(--accent)", lineHeight: 1 }}>
-              â‚±{fmt(data.total)}
+              ₱{fmt(data.total)}
             </div>
             <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 6 }}>
               {data.walkins.length} walk-in{data.walkins.length !== 1 ? "s" : ""}
@@ -141,7 +141,7 @@ function Walkins() {
                       )}
                     </td>
                     <td style={{ color: "var(--accent)", fontWeight: 700, fontFamily: "'Bebas Neue',cursive", fontSize: 18 }}>
-                      â‚±{Number(w.amount).toLocaleString()}
+                      ₱{Number(w.amount).toLocaleString()}
                     </td>
                     <td style={{ color: "var(--muted)", fontSize: 12 }}>{w.note || "â€”"}</td>
                     <td style={{ color: "var(--muted)", fontSize: 12 }}>
@@ -153,7 +153,7 @@ function Walkins() {
               <tfoot>
                 <tr>
                   <td colSpan="2" style={{ fontWeight: 700, fontSize: 13, paddingTop: 14, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 1 }}>Total</td>
-                  <td style={{ fontFamily: "'Bebas Neue',cursive", fontSize: 28, color: "var(--accent)", paddingTop: 14 }}>â‚±{fmt(data.total)}</td>
+                  <td style={{ fontFamily: "'Bebas Neue',cursive", fontSize: 28, color: "var(--accent)", paddingTop: 14 }}>₱{fmt(data.total)}</td>
                   <td colSpan="2" />
                 </tr>
               </tfoot>
